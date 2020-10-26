@@ -43,6 +43,6 @@ int main()
     if (ret != 0)
         std::cout << "wiredtiger_open failed with return code " << ret << '\n';
     else
-        std::cout << "Tammy is awesome!\n";
+        std::cout << "Tammy Rocks!\n";
     return 0;
 }
