@@ -6,7 +6,7 @@
 
 
 #-- macros ---------------------------------------------------------------------
-INCPATH  = -I. -I$(WT_HOME)/src/include -I$(WT_HOME)/build_posix
+INCPATH  = -I. -I$(WT_HOME)/src/include -I$(WT_HOME)/build_posix -Ithird_party
 OBJDIR  := obj
 
 CPP      = g++
