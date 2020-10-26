@@ -10,7 +10,7 @@ INCPATH  = -I. -I$(WT_HOME)/src/include -I$(WT_HOME)/build_posix -Ithird_party
 OBJDIR  := obj
 
 CPP      = g++
-CPPFLAGS = $(INCPATH) -Wall -m64 -std=c++14 -pipe -Wno-unused
+CPPFLAGS = $(INCPATH) -Wall -std=c++17 -Wno-unused
 
 
 #-- executables ----------------------------------------------------------------
@@ -21,8 +21,8 @@ TARGET = wiredindex
 #-- link libraries -------------------------------------------------------------
 
 LD      = $(CPP)
-LDLIBS  = -lwiredtiger -lbsoncxx
-LDFLAGS = -L../libs -L$(WT_HOME)/build_posix/.libs
+LDLIBS  = -lwiredtiger
+LDFLAGS = -L$(WT_HOME)/build_posix/.libs
 
 
 #-- build flags ----------------------------------------------------------------
@@ -60,12 +60,8 @@ DEPS := $(patsubst %.o,%.d,$(OBJS))
 
 vpath %.cpp $(SRCDIRS)
 
-$(OBJDIR)/%.o: %.cpp
-	$(CPP) $(CPPFLAGS) -c $< -o $@
-
-$(OBJDIR)/%.d: %.cpp | makedir
-	@echo generating dependency file $@
-	@$(CPP) -MM -MG $(CPPFLAGS) $< | sed -e 's,^\([^:]*\)\.o[ ]*:,$(@D)/\1.o $(@D)/\1.d:,' > $@
+$(OBJDIR)/%.o: %.cpp | makedir
+	$(CPP) $(CPPFLAGS) -o $@ -MMD -MF $(basename $@).d -c $<
 
 
 #-- targets --------------------------------------------------------------------
