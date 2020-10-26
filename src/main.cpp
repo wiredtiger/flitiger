@@ -8,8 +8,8 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <fstream>
-#include <streambuf>
 #include "json.hpp"
 #include "wiredtiger.h"
 
@@ -26,11 +26,16 @@ extern "C" {
 
 using namespace nlohmann;
 
-int load_file() {
-    std::ifstream ifs("../raw_data/rockbench_1row.json");
-    json jf = json::parse(ifs);
-    std::cout << jf.at("data");
-    return 0;
+void process_json(json json) {
+    std::cout << json.at("data") << std::endl;
+}
+
+void load_file() {
+    std::string line;
+    std::ifstream ifs("../raw_data/rockbench_10rows.json");
+    while (std::getline(ifs, line)) {
+        process_json(json::parse(line));
+    }
 }
 
 int main()
