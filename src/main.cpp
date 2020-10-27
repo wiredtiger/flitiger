@@ -26,8 +26,24 @@ extern "C" {
 
 using namespace nlohmann;
 
-void process_json(json json) {
-    std::cout << json.at("data") << std::endl;
+void process_json(json subdoc) {
+    std::cout << std::endl;
+    for (auto it : subdoc.at("data").at(0).items()) {
+        std::cout << it.value().type_name() << " " << it.key()  << std::endl;
+        if (it.value().is_boolean()) {
+
+        } else if (it.value().is_number()) {
+
+        } else if (it.value().is_object()) {
+
+        } else if (it.value().is_string()) {
+
+        } else if (it.value().is_array()) {
+
+        } else if (it.value().is_null()) {
+
+        }
+    }
 }
 
 void load_file() {
