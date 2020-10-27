@@ -21,3 +21,12 @@ If you aren't using Ubuntu, then the above link has instructions for other platf
 
 
 Once the dependencies are met: cd src && make
+
+
+# Usage
+
+To use the library, run the generated binary.
+
+If running in server mode, you can send requests using curl in the following form:
+
+~/work/bson-indexer$ curl http://127.0.0.1:8099/test --data-binary @raw_data/rockbench_1row.json -H 'Content-Type: application/json'
