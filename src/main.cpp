@@ -55,7 +55,8 @@ int insert_column(WT_CURSOR *cursor, const std::string &key, uint64_t id, json v
     item.data = val.data();
     item.size = val.length();
     if ((ret = wt::col_table_insert(cursor, key, id, get_type(value), item)) == 0) {
-        std::cout << "Inserting: " << key << " " << id << " " << val.data() << std::endl;
+        std::cout << "insert_column: (" << key << ", " << id << "), "
+                  << "(" << value.type_name() << ", " << val.data() << ")\n";
     }
     return ret;
 }
@@ -68,7 +69,8 @@ int insert_row(WT_CURSOR *cursor, uint64_t id, const std::string &key, json valu
     item.data = val.data();
     item.size = val.length();
     if ((ret = wt::row_table_insert(cursor, id, key, get_type(value), item)) == 0) {
-        std::cout << "Inserting: " << key << " " << id << " " << val.data() << std::endl;
+        std::cout << "insert_row: (" << id << ", " << key << "), "
+                  << "(" << value.type_name() << ", " << val.data() << ")\n";
     }
     return ret;
 }
@@ -139,7 +141,7 @@ int main()
 
     load_file(session);
 
-#if 1
+#if 0
     wt::row_table_print(session, rtbl);
     wt::col_table_print(session, ctbl);
 #endif
