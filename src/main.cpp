@@ -13,6 +13,7 @@
 #include <fstream>
 #include "json.hpp"
 #include "wiredtiger.h"
+#include "RestIngestServer.hpp"
 
 // Some files included by wt_internal.h have some C-ism's that don't work in C++.
 extern "C" {
@@ -87,19 +88,61 @@ void process_json(json jsn, uint64_t id) {
     }
 }
 
-void load_file() {
+void load_file(const char *filename) {
     uint64_t id = 0;
     std::string line;
-    std::ifstream ifs("../raw_data/rockbench_10rows.json");
+    std::ifstream ifs(filename);
     while (std::getline(ifs, line)) {
         process_json(json::parse(line), id);
         id++;
     }
 }
 
-int main()
+int main(int argc, char **argv)
 {
-    load_file();
+    int opt;
+    const char *filename = "../raw_data/rockbench_10rows.json";
+    const char *url = "127.0.0.1:8099";
+    bool use_file = false;
+    bool use_server = false;
+
+    // Shut GetOpt error messages down (return '?'):
+    opterr = 0;
+    while ( (opt = getopt(argc, argv, "FSf:s:")) != -1 ) {
+        switch ( opt ) {
+            case 'f':
+                    filename = optarg;
+                /* FALLTHROUGH */
+            case 'F':
+                    use_file = true;
+                break;
+            case 's':
+                    url = optarg;
+                /* FALLTHROUGH */
+            case 'S':
+                    use_server = true;
+                break;
+            case '?':  // unknown option...
+                std::cerr << "Unknown option: '" << char(optopt) << "'!" << std::endl;
+                break;
+        }
+    }
+
+    if (use_file == use_server) {
+        std::cout << "Invalid usage. Proper usage: " << std::endl;
+        std::cout << argv[0] << "-F. For default file load (" << filename << ")" << std::endl;
+        std::cout << argv[0] << "-S. For default server (" << url << ")" << std::endl;
+        std::cout << argv[0] << "-f <file_name>. For choosing a file to load" << std::endl;
+        std::cout << argv[0] << "-s <listen_uri>. For default file load" << std::endl;
+        return (1);
+    }
+
+    if (use_file) {
+        load_file(filename);
+    } else {
+        RestIngestServer server;
+        server.start();
+    }
 
     WT_CONNECTION *conn = nullptr;
     std::string dbpath = "wt_test";
@@ -108,5 +151,6 @@ int main()
         std::cout << "wiredtiger_open failed with return code " << ret << '\n';
     else
         std::cout << "Tammy Rocks!\n";
+
     return 0;
 }

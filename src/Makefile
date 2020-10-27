@@ -21,7 +21,7 @@ TARGET = wiredindex
 #-- link libraries -------------------------------------------------------------
 
 LD      = $(CPP)
-LDLIBS  = -lwiredtiger
+LDLIBS  = -lwiredtiger -lcpprest -lboost_system -lssl -lcrypto
 LDFLAGS = -L$(WT_HOME)/build_posix/.libs
 
 
