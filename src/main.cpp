@@ -92,7 +92,7 @@ void load_file(const char *filename) {
     std::string line;
     std::ifstream ifs(filename);
     while (std::getline(ifs, line)) {
-        process_json(web::json::value::parse(line));
+        process_json_top_level(web::json::value::parse(line));
     }
 }
 
