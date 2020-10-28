@@ -48,13 +48,32 @@ int insert_row(WT_CURSOR *cursor, uint64_t id, const std::string &key, web::json
     return ret;
 }
 
-std::unordered_map<std::string, web::json::value> process_sub_json(web::json::object jsn) {
-    std::unordered_map<std::string, web::json::value> kvs{};
-
-    return kvs;
+void process_json(web::json::object bjct, std::string full_key, WT_CURSOR* rc, WT_CURSOR* cc) {
+    for (auto it : bjct) {
+        auto val = it.second;
+        auto key = it.first;
+        std::string new_key = full_key;
+        if (val.is_null()) {
+            continue;
+        } else if (val.is_object()) {
+            if (!new_key.empty())
+                new_key.append(".");
+            new_key.append(key);
+            process_json(val.as_object(), new_key, rc, cc);
+        } else {
+            if (!new_key.empty()) {
+                new_key.append("." + key);
+                insert_row(rc, db_document_id, new_key, val);
+                insert_column(cc, key, db_document_id, val);
+            } else {
+                insert_row(rc, db_document_id, key, val);
+                insert_column(cc, key, db_document_id, val);
+            }
+        }
+    }
 }
 
-void process_json(web::json::value jsn) {
+void process_json_top_level(web::json::value jsn) {
     WT_CURSOR *rc = nullptr;
     WT_CURSOR *cc = nullptr;
     wt::open_cursor(session, rtbl, &rc);
@@ -62,21 +81,7 @@ void process_json(web::json::value jsn) {
 
     // The top level data is an array so iterate over it.
     for (auto it : jsn.at("data").as_array()) {
-        for (auto itt : it.as_object()) {
-            auto val = itt.second;
-            auto key = itt.first;
-            if (val.is_null()) {
-                continue;
-            } else if (val.is_object()) {
-               /* for (auto itt : process_sub_json(val)) {
-                    insert_row(rc, id, itt.first, itt.second);
-                    insert_column(cc, itt.first, id, itt.second);
-                }*/
-            } else {
-                insert_row(rc, db_document_id, key, val);
-                insert_column(cc, key, db_document_id, val);
-            }
-        }
+        process_json(it.as_object(), "", rc, cc);
         db_document_id++;
     }
     wt::close_cursor(rc);
@@ -173,15 +178,14 @@ int main(int argc, char **argv)
             std::cout << "Unable to execute query: Database is empty :(\n";
         }
     } else {
-
         if (use_file) {
             load_file(filename);
         } else {
-            RestIngestServer server(&process_json);
+            RestIngestServer server(&process_json_top_level);
             server.start();
         }
     }
- 
+
     wt::row_table_print(session, rtbl);
     //wt::col_table_print(session, ctbl);
 
