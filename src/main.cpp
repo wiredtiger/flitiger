@@ -29,10 +29,8 @@ int insert_column(WT_CURSOR *cursor, const std::string &key, uint64_t id, web::j
     item.data = val.data();
     item.size = val.length();
     if ((ret = wt::col_table_insert(cursor, key, id, value.type(), item)) == 0) {
-#if 0
-        std::cout << "insert_column: (" << key << ", " << id << "), "
-                  << "(" << value.type() << ", " << val.data() << ")\n";
-#endif
+    //    std::cout << "insert_column: (" << key << ", " << id << "), "
+    //              << "(" << value.type() << ", " << val.data() << ")\n";
     }
     return ret;
 }
@@ -44,10 +42,8 @@ int insert_row(WT_CURSOR *cursor, uint64_t id, const std::string &key, web::json
     item.data = val.data();
     item.size = val.length();
     if ((ret = wt::row_table_insert(cursor, id, key, value.type(), item)) == 0) {
-#if 0
-        //std::cout << "insert_row: (" << id << ", " << key << "), "
-          //        << "(" << value.type() << ", " << val.data() << ")\n";
-#endif
+    //    std::cout << "insert_row: (" << id << ", " << key << "), "
+    //              << "(" << value.type() << ", " << val.data() << ")\n";
     }
     return ret;
 }
@@ -101,15 +97,21 @@ int main(int argc, char **argv)
     const char *filename = "../raw_data/rockbench_10rows.json";
     const char *url = "127.0.0.1:8099";
     bool use_file = false;
+    bool run_query = false;
     bool use_server = false;
+    std::string query_field;
 
     WT_CONNECTION *conn = nullptr;
     std::string dbpath = "wt_test";
 
     // Shut GetOpt error messages down (return '?'):
     opterr = 0;
-    while ( (opt = getopt(argc, argv, "FSf:s:")) != -1 ) {
+    while ( (opt = getopt(argc, argv, "FSf:q:s:")) != -1 ) {
         switch ( opt ) {
+            case 'q':
+                    run_query = true;
+                    query_field = optarg;
+                break;
             case 'f':
                     filename = optarg;
                 /* FALLTHROUGH */
@@ -128,11 +130,12 @@ int main(int argc, char **argv)
         }
     }
 
-    if (use_file == use_server) {
+    if (use_file == use_server && !run_query) {
         std::cout << "Invalid usage. Proper usage: " << std::endl;
         std::cout << argv[0] << " -F. For default file load (" << filename << ")" << std::endl;
         std::cout << argv[0] << " -S. For default server (" << url << ")" << std::endl;
         std::cout << argv[0] << " -f <file_name>. For choosing a file to load" << std::endl;
+        std::cout << argv[0] << " -q <field_name>. Query field and output metrics" << std::endl;
         std::cout << argv[0] << " -s <listen_uri>. For default file load" << std::endl;
         return (1);
     }
@@ -161,17 +164,26 @@ int main(int argc, char **argv)
     wt::get_last_row_insert_id(session, rtbl, &db_document_id);
     if (db_document_id) db_document_id++;
 
-    if (use_file) {
-        load_file(filename);
+    if (run_query) {
+        if (db_document_id) {
+            std::cout << "Querying " << db_document_id << " documents for field "
+                      << query_field << '\n';
+        // To do!
+        } else {
+            std::cout << "Unable to execute query: Database is empty :(\n";
+        }
     } else {
-        RestIngestServer server(&process_json);
-        server.start();
-    }
 
-#if 0
+        if (use_file) {
+            load_file(filename);
+        } else {
+            RestIngestServer server(&process_json);
+            server.start();
+        }
+    }
+ 
     wt::row_table_print(session, rtbl);
-    wt::col_table_print(session, ctbl);
-#endif
+    //wt::col_table_print(session, ctbl);
 
     wt::close_database(conn);
     std::cout << "\nTammy Rocks!\n";
