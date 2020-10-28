@@ -53,6 +53,10 @@ int col_table_insert(WT_CURSOR *cursor,
                      uint16_t type,
                      WT_ITEM item);
 
+int get_last_row_insert_id(WT_SESSION *session,
+                           const std::string &uri,
+                           uint64_t *id);
+
 int row_table_print(WT_SESSION *session,
                     const std::string &uri);
 

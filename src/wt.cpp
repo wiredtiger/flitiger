@@ -24,6 +24,20 @@ extern "C" {
 
 namespace wt {
 
+int get_last_row_insert_id(WT_SESSION *session, const std::string &uri, uint64_t *id) {
+
+    int ret = 0;
+    *id = 0;
+    const char *key;
+    WT_CURSOR *cursor = nullptr;
+    if ((ret = session->open_cursor(session, uri.c_str(), nullptr, nullptr, &cursor)) == 0) {
+        if ((ret = cursor->prev(cursor)) == 0) {
+            ret = cursor->get_key(cursor, id, &key);
+        }
+    }
+    return ret;
+}
+
 int open_cursor(WT_SESSION *session, const std::string &uri, WT_CURSOR **cursorp) {
 
     WT_CURSOR *cursor = nullptr;

@@ -59,8 +59,10 @@ int insert_column(WT_CURSOR *cursor, const std::string &key, uint64_t id, json v
     item.data = val.data();
     item.size = val.length();
     if ((ret = wt::col_table_insert(cursor, key, id, get_type(value), item)) == 0) {
+#if 0
         std::cout << "insert_column: (" << key << ", " << id << "), "
                   << "(" << value.type_name() << ", " << val.data() << ")\n";
+#endif
     }
     return ret;
 }
@@ -73,8 +75,10 @@ int insert_row(WT_CURSOR *cursor, uint64_t id, const std::string &key, json valu
     item.data = val.data();
     item.size = val.length();
     if ((ret = wt::row_table_insert(cursor, id, key, get_type(value), item)) == 0) {
-        std::cout << "insert_row: (" << id << ", " << key << "), "
-                  << "(" << value.type_name() << ", " << val.data() << ")\n";
+#if 0
+        //std::cout << "insert_row: (" << id << ", " << key << "), "
+          //        << "(" << value.type_name() << ", " << val.data() << ")\n";
+#endif
     }
     return ret;
 }
@@ -110,6 +114,7 @@ void process_json(WT_SESSION *session, json jsn, uint64_t id) {
 }
 
 void load_file(WT_SESSION *session, const char *filename, uint64_t db_document_id) {
+
     uint64_t id = db_document_id;
     std::string line;
     std::ifstream ifs(filename);
@@ -183,6 +188,9 @@ int main(int argc, char **argv)
         std::cout << wt::get_error_message(ret) << '\n';
         return ret;
     }
+
+    wt::get_last_row_insert_id(session, rtbl, &dbid);
+    if (dbid) dbid++;
 
     if (use_file) {
         load_file(session, filename, dbid);
