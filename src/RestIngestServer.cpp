@@ -21,17 +21,16 @@ using namespace http::experimental::listener;
 class CommandHandler
 {
 public:
-    CommandHandler(void (*json_callback)(web::json::value)):_json_callback(json_callback) {}
-    CommandHandler(utility::string_t url);
+    CommandHandler(utility::string_t url, void (*json_callback)(web::json::value));
     pplx::task<void> open() { return m_listener.open(); }
     pplx::task<void> close() { return m_listener.close(); }
 private:
-    void (*_json_callback)(web::json::value);
     void handle_get_or_post(http_request message);
         http_listener m_listener;
+    void (*_json_callback)(web::json::value);
 };
 
-CommandHandler::CommandHandler(utility::string_t url) : m_listener(url)
+CommandHandler::CommandHandler(utility::string_t url, void (*json_callback)(web::json::value)) : m_listener(url), _json_callback(json_callback)
 {
     m_listener.support(methods::GET, std::bind(&CommandHandler::handle_get_or_post, this, std::placeholders::_1));
     m_listener.support(methods::POST, std::bind(&CommandHandler::handle_get_or_post, this, std::placeholders::_1));
@@ -60,7 +59,7 @@ int RestIngestServer::start()
     {
         uri_builder uri(_address);
         auto addr = uri.to_uri().to_string();
-        CommandHandler handler(addr);
+        CommandHandler handler(addr, _json_callback);
         handler.open().wait();
         ucout << utility::string_t(U("Listening for requests at: ")) << addr << std::endl;
         ucout << U("Press ENTER key to quit...") << std::endl;
