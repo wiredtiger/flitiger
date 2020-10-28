@@ -92,7 +92,20 @@ void load_file(const char *filename) {
     std::string line;
     std::ifstream ifs(filename);
     while (std::getline(ifs, line)) {
-        process_json(web::json::value::parse(line));
+        process_json_top_level(web::json::value::parse(line));
+    }
+}
+
+void query_table(const char* query_field, bool query_col_table) {
+    wt::metrics mtr;
+    std::string table = query_col_table ? ctbl : rtbl;
+    std::cout << "\nQuerying " << 10*db_document_id << " records from table '"
+              << table << "' for field '" << query_field << "' ...\n";
+    wt::query_table(session, table, query_field, query_col_table, mtr);
+    std::cout << "elapsed time:  " << mtr.query_time << " ms\n";
+    std::cout << "records read:  " << mtr.read_count << '\n';
+    if (mtr.average > 0) {
+        std::cout << "average value: " << mtr.average << '\n';
     }
 }
 
@@ -101,10 +114,10 @@ int main(int argc, char **argv)
     int opt;
     const char *filename = "../raw_data/rockbench_10rows.json";
     const char *url = "127.0.0.1:8099";
+    const char *query_field;
     bool use_file = false;
     bool run_query = false;
     bool use_server = false;
-    std::string query_field;
 
     WT_CONNECTION *conn = nullptr;
     std::string dbpath = "wt_test";
@@ -171,9 +184,8 @@ int main(int argc, char **argv)
 
     if (run_query) {
         if (db_document_id) {
-            std::cout << "Querying " << db_document_id << " documents for field "
-                      << query_field << '\n';
-        // To do!
+            query_table(query_field, true);
+            query_table(query_field, false);
         } else {
             std::cout << "Unable to execute query: Database is empty :(\n";
         }
@@ -186,7 +198,7 @@ int main(int argc, char **argv)
         }
     }
 
-    wt::row_table_print(session, rtbl);
+    //wt::row_table_print(session, rtbl);
     //wt::col_table_print(session, ctbl);
 
     wt::close_database(conn);

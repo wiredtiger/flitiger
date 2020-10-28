@@ -12,6 +12,12 @@
 
 namespace wt {
 
+struct metrics {
+    double average = 0;
+    uint64_t read_count = 0;
+    uint64_t query_time = 0;
+};
+
 static const std::string get_error_message(int return_code) {
     return wiredtiger_strerror(return_code);
 }
@@ -28,6 +34,17 @@ static int close_database(WT_CONNECTION *conn) {
 static int close_cursor(WT_CURSOR *cursor) {
     return cursor->close(cursor);
 }
+
+int query_table(WT_SESSION *session,
+                const std::string &uri,
+                const char *query_field,
+                bool use_col_table,
+                metrics &mtr);
+
+int query_col_table(WT_SESSION *session,
+                    const std::string &uri,
+                    const char *query_field,
+                    metrics &mtr);
 
 int open_cursor(WT_SESSION *session,
                 const std::string &uri,

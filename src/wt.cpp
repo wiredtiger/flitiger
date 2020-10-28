@@ -6,10 +6,12 @@
  * See the file LICENSE for redistribution information.
  */
 
+#include <cassert>
+#include <chrono>
 #include <iostream>
 #include <string>
-#include <cassert>
 #include "wiredtiger.h"
+#include "wt.h"
 
 // Some files included by wt_internal.h have some C-ism's that don't work in C++.
 extern "C" {
@@ -23,6 +25,52 @@ extern "C" {
 }
 
 namespace wt {
+enum value_type { Number, Boolean, String, Object, Array, Null };
+
+int query_table(WT_SESSION *session, const std::string &uri, const char *query_field,
+  bool use_col_table, metrics &mtr) {
+
+    int ret = 0;
+    int exact = 0;
+    uint16_t type;
+    uint64_t id;
+    uint64_t num_records = 0;
+    double sum = 0;
+    const char *key;
+    WT_ITEM item;
+    WT_CURSOR *cursor = nullptr;
+
+    auto start = std::chrono::steady_clock::now();
+    wt::open_cursor(session, uri.c_str(), &cursor);
+    use_col_table ? cursor->set_key(cursor, query_field, 0) :
+                    cursor->set_key(cursor, 0, query_field);
+    if ((ret = cursor->search_near(cursor, &exact)) == 0) {
+        if (exact == 0) num_records++;
+        while ((ret = cursor->next(cursor)) == 0) {
+            if (use_col_table) {
+                cursor->get_key(cursor, &key, &id);
+                if (strcmp(key, query_field))
+                    break;
+            } else {
+                cursor->get_key(cursor, &id, &key);
+                if (strcmp(key, query_field))
+                    continue;
+            }
+            cursor->get_value(cursor, &type, &item);
+            if (type == Number) sum += std::stod((const char*) item.data);
+            num_records++;
+        }
+    }
+    cursor->close(cursor);
+    auto stop = std::chrono::steady_clock::now();
+
+    mtr.query_time = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count();
+    mtr.read_count = num_records;
+    if (num_records)
+        mtr.average = sum/(double)num_records;
+
+    return ret;
+}
 
 int get_last_row_insert_id(WT_SESSION *session, const std::string &uri, uint64_t *id) {
 
