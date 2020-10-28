@@ -109,8 +109,8 @@ void process_json(WT_SESSION *session, json jsn, uint64_t id) {
     wt::close_cursor(cc);
 }
 
-void load_file(WT_SESSION *session, const char *filename) {
-    uint64_t id = 0;
+void load_file(WT_SESSION *session, const char *filename, uint64_t db_document_id) {
+    uint64_t id = db_document_id;
     std::string line;
     std::ifstream ifs(filename);
     while (std::getline(ifs, line)) {
@@ -155,10 +155,10 @@ int main(int argc, char **argv)
 
     if (use_file == use_server) {
         std::cout << "Invalid usage. Proper usage: " << std::endl;
-        std::cout << argv[0] << "-F. For default file load (" << filename << ")" << std::endl;
-        std::cout << argv[0] << "-S. For default server (" << url << ")" << std::endl;
-        std::cout << argv[0] << "-f <file_name>. For choosing a file to load" << std::endl;
-        std::cout << argv[0] << "-s <listen_uri>. For default file load" << std::endl;
+        std::cout << argv[0] << " -F. For default file load (" << filename << ")" << std::endl;
+        std::cout << argv[0] << " -S. For default server (" << url << ")" << std::endl;
+        std::cout << argv[0] << " -f <file_name>. For choosing a file to load" << std::endl;
+        std::cout << argv[0] << " -s <listen_uri>. For default file load" << std::endl;
         return (1);
     }
 
@@ -171,24 +171,27 @@ int main(int argc, char **argv)
 
     assert(conn);
     assert(session);
-    if ((ret = wt::create_table(session, rtbl, "key_format=QS,value_format=Hu")) != 0) {
-        std::cout << wt::get_error_message(ret) << '\n';
-        return ret;
-    }
-    if ((ret = wt::create_table(session, ctbl, "key_format=SQ,value_format=Hu")) != 0) {
-        std::cout << wt::get_error_message(ret) << '\n';
-        return ret;
-    }
+    uint64_t dbid = 0;
 
+    std::string config = "type=lsm,key_format=QS,value_format=Hu";
+    if ((ret = wt::create_table(session, rtbl, config)) != 0) {
+        std::cout << wt::get_error_message(ret) << '\n';
+        return ret;
+    }
+    config = "type=lsm,key_format=SQ,value_format=Hu";
+    if ((ret = wt::create_table(session, ctbl, config)) != 0) {
+        std::cout << wt::get_error_message(ret) << '\n';
+        return ret;
+    }
 
     if (use_file) {
-        load_file(session, filename);
+        load_file(session, filename, dbid);
     } else {
         RestIngestServer server;
         server.start();
     }
 
-#if 1
+#if 0
     wt::row_table_print(session, rtbl);
     wt::col_table_print(session, ctbl);
 #endif
