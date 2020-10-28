@@ -164,7 +164,7 @@ int main(int argc, char **argv)
     if (use_file) {
         load_file(filename);
     } else {
-        RestIngestServer server(process_json);
+        RestIngestServer server(&process_json);
         server.start();
     }
 
