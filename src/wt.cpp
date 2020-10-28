@@ -47,6 +47,7 @@ int query_table(WT_SESSION *session, const std::string &uri, const char *query_f
     if ((ret = cursor->search_near(cursor, &exact)) == 0) {
         if (exact == 0) num_records++;
         while ((ret = cursor->next(cursor)) == 0) {
+            num_records++;
             if (use_col_table) {
                 cursor->get_key(cursor, &key, &id);
                 if (strcmp(key, query_field))
@@ -58,7 +59,6 @@ int query_table(WT_SESSION *session, const std::string &uri, const char *query_f
             }
             cursor->get_value(cursor, &type, &item);
             if (type == Number) sum += std::stod((const char*) item.data);
-            num_records++;
         }
     }
     cursor->close(cursor);
