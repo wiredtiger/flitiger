@@ -10,22 +10,23 @@
 #include <cpprest/uri.h>
 #include <cpprest/http_listener.h>
 #include <cpprest/asyncrt_utils.h>
- 
+
 #include "RestIngestServer.hpp"
 
 using namespace web;
 using namespace http;
 using namespace utility;
 using namespace http::experimental::listener;
- 
+
 class CommandHandler
 {
 public:
-    CommandHandler() {}
+    CommandHandler(void (*json_callback)(web::json::value)):_json_callback(json_callback) {}
     CommandHandler(utility::string_t url);
     pplx::task<void> open() { return m_listener.open(); }
     pplx::task<void> close() { return m_listener.close(); }
 private:
+    void (*_json_callback)(web::json::value);
     void handle_get_or_post(http_request message);
         http_listener m_listener;
 };
@@ -48,12 +49,9 @@ void CommandHandler::handle_get_or_post(http_request message)
 	})
 		.wait();
     ucout << payload.serialize() << std::endl;
+    _json_callback(payload);
     /* TODO: Send this information into process_json */
     message.reply(status_codes::OK, "ACCEPTED");
-}
-
-RestIngestServer::RestIngestServer(utility::string_t address) {
-	_address = address;
 }
 
 int RestIngestServer::start()

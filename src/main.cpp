@@ -19,6 +19,8 @@
 
 std::string rtbl = "table:row_table";
 std::string ctbl = "table:col_table";
+uint64_t db_document_id = 0;
+WT_SESSION* session = NULL;
 
 int insert_column(WT_CURSOR *cursor, const std::string &key, uint64_t id, web::json::value value) {
     int ret = 0;
@@ -56,8 +58,7 @@ std::unordered_map<std::string, web::json::value> process_sub_json(web::json::ob
     return kvs;
 }
 
-void process_json(WT_SESSION *session, web::json::value jsn, uint64_t *id) {
-
+void process_json(web::json::value jsn) {
     WT_CURSOR *rc = nullptr;
     WT_CURSOR *cc = nullptr;
     wt::open_cursor(session, rtbl, &rc);
@@ -76,24 +77,21 @@ void process_json(WT_SESSION *session, web::json::value jsn, uint64_t *id) {
                     insert_column(cc, itt.first, id, itt.second);
                 }*/
             } else {
-                insert_row(rc, *id, key, val);
-                insert_column(cc, key, *id, val);
+                insert_row(rc, db_document_id, key, val);
+                insert_column(cc, key, db_document_id, val);
             }
         }
-        *id++;
+        db_document_id++;
     }
     wt::close_cursor(rc);
     wt::close_cursor(cc);
 }
 
-void load_file(WT_SESSION *session, const char *filename, uint64_t db_document_id) {
-
-    uint64_t id = db_document_id;
+void load_file(const char *filename) {
     std::string line;
     std::ifstream ifs(filename);
     while (std::getline(ifs, line)) {
-        process_json(session, web::json::value::parse(line), &id);
-        id++;
+        process_json(web::json::value::parse(line));
     }
 }
 
@@ -106,7 +104,6 @@ int main(int argc, char **argv)
     bool use_server = false;
 
     WT_CONNECTION *conn = nullptr;
-    WT_SESSION *session = nullptr;
     std::string dbpath = "wt_test";
 
     // Shut GetOpt error messages down (return '?'):
@@ -149,7 +146,6 @@ int main(int argc, char **argv)
 
     assert(conn);
     assert(session);
-    uint64_t dbid = 0;
 
     std::string config = "type=lsm,key_format=QS,value_format=Hu";
     if ((ret = wt::create_table(session, rtbl, config)) != 0) {
@@ -162,13 +158,13 @@ int main(int argc, char **argv)
         return ret;
     }
 
-    wt::get_last_row_insert_id(session, rtbl, &dbid);
-    if (dbid) dbid++;
+    wt::get_last_row_insert_id(session, rtbl, &db_document_id);
+    if (db_document_id) db_document_id++;
 
     if (use_file) {
-        load_file(session, filename, dbid);
+        load_file(filename);
     } else {
-        RestIngestServer server;
+        RestIngestServer server(process_json);
         server.start();
     }
 
