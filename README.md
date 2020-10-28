@@ -83,7 +83,7 @@ index 5a41481..73e4b41 100644
 
 Rebuild: `cd src && make`.
 
-Install s3fs
+Install s3fs:
 
 ```
 $ sudo amazon-linux-extras install epel
@@ -103,7 +103,7 @@ Mount the bucket as a filesystem called `s3` inside the data directory:
 
 ```
 $ S3_REGION=ap-southeast-2 
-$ s3fs bson-indexer `pwd`/s3 -o dbglevel=info -o endpoint=${S3_REGION} -o passwd_file=${HOME}/.passwd-s3fs -o url=https://s3-${S3_REGION}.amazonaws.com/
+$ s3fs bson-indexer wt_test/s3 -o dbglevel=info -o endpoint=${S3_REGION} -o passwd_file=${HOME}/.passwd-s3fs -o url=https://s3-${S3_REGION}.amazonaws.com/
 ```
 
 Run the workload as before: once enough data is inserted, merges will be triggered that create level 2 chunks (after around 60 chunks in each LSM tree).
