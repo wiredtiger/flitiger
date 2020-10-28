@@ -29,3 +29,29 @@ To use the library, run the generated binary.
 If running in server mode, you can send requests using curl in the following form:
 
 `~/work/bson-indexer$ curl http://127.0.0.1:8099/test --data-binary @raw_data/rockbench_1row.json -H 'Content-Type: application/json'`
+
+## Using Rockbench to populate FliTiger
+
+Clone the Rockbench repository.
+Apply the diff at <root>/raw_data/rbench.diff to the repository.
+Build the generator.
+Run against a flitiger running in server mode.
+
+Starting up a flitiger in code:
+```
+$ cd ~/work/bson-indexer/src
+$ make
+$ ./wiredindex -S
+```
+
+Starting up a generator in code:
+```
+$ cd ~/work
+$ git clone git@github.com:rockset/rockbench.git
+$ cd rockbench
+$ patch -p1 < ../bson-index/raw_data/rbench.diff
+$ cd generator
+$ go build
+$ FLITIGER_URL="http://127.0.0.1:8099/" BATCH_SIZE=2 WPS=10 DESTINATION=flitiger ./generator
+```
+
