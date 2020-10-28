@@ -35,6 +35,7 @@ int get_last_row_insert_id(WT_SESSION *session, const std::string &uri, uint64_t
             ret = cursor->get_key(cursor, id, &key);
         }
     }
+    cursor->close(cursor);
     return ret;
 }
 
