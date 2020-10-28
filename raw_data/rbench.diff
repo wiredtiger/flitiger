@@ -1,0 +1,121 @@
+diff --git a/generator/flitiger.go b/generator/flitiger.go
+new file mode 100644
+index 0000000..6f185fa
+--- /dev/null
++++ b/generator/flitiger.go
+@@ -0,0 +1,57 @@
++package main
++
++import (
++	"bytes"
++	"encoding/json"
++	"fmt"
++	"io"
++	"io/ioutil"
++	"net/http"
++	"time"
++)
++
++// FliTiger contains all configurations needed to send documents to FliTiger
++type FliTiger struct {
++	ftURL           string
++	collection      string
++	client          *http.Client
++	generatorIdentifier string
++}
++
++// SendDocument sends a batch of documents to FliTiger
++func (r *FliTiger) SendDocument(docs []interface{}) error {
++	numDocs := len(docs)
++	numEventIngested.Add(float64(numDocs))
++
++	URL := fmt.Sprintf("%s/FliTiger", r.ftURL)
++	body := map[string][]interface{}{"data": docs}
++	jsonBody, _ := json.Marshal(body)
++	req, _ := http.NewRequest(http.MethodPost, URL, bytes.NewBuffer(jsonBody))
++	//req.Header.Add("Authorization", fmt.Sprintf("ApiKey %s", r.apiKey))
++	req.Header.Add("Content-Type", "application/json")
++	resp, err := r.client.Do(req)
++	if err != nil {
++		recordWritesErrored(float64(numDocs))
++		fmt.Println("Error during request!", err)
++		return err
++	}
++	defer deferredErrorCloser(resp.Body)
++
++	if resp.StatusCode == http.StatusOK {
++		recordWritesCompleted(float64(numDocs))
++		_, _ = io.Copy(ioutil.Discard, resp.Body)
++	} else {
++		recordWritesErrored(float64(numDocs))
++		bodyBytes, err := ioutil.ReadAll(resp.Body)
++		if err == nil {
++			bodyString := string(bodyBytes)
++			return fmt.Errorf("error code: %d, body: %s", resp.StatusCode, bodyString)
++		}
++	}
++	return nil
++}
++
++// GetLatestTimestamp returns the latest _event_time in FliTiger
++func (r *FliTiger) GetLatestTimestamp() (time.Time, error) {
++	return time.Now().Add(-10 * time.Millisecond), nil
++}
+diff --git a/generator/main.go b/generator/main.go
+index ddd2d34..31dc729 100644
+--- a/generator/main.go
++++ b/generator/main.go
+@@ -112,6 +112,14 @@ func main() {
+ 			client:              client,
+ 			generatorIdentifier: generatorIdentifier,
+ 		}
++	case "flitiger":
++		ftURL := mustGetEnvString("FLITIGER_URL")
++
++		d = &FliTiger{
++			ftURL:               ftURL,
++			client:              client,
++			generatorIdentifier: generatorIdentifier,
++		}
+ 	case "null":
+ 		d = &Null{}
+ 	default:
+diff --git a/generator/null.go b/generator/null.go
+index 4e3c0f9..d46849d 100644
+--- a/generator/null.go
++++ b/generator/null.go
+@@ -1,11 +1,33 @@
+ package main
+ 
+-import "time"
++import (
++	"time"
++	"encoding/json"
++	"log"
++	"os"
++)
+ 
+ // Null destination for local testing
+ type Null struct{}
+ 
+ func (n *Null) SendDocument(docs []interface{}) error {
++	body := map[string][]interface{}{"data": docs}
++	jsonBody, _ := json.Marshal(body)
++	//_ = ioutil.WriteFile("test.json", jsonBody, 0644)
++
++	f, err := os.OpenFile("index_dataset.json",
++		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
++	if err != nil {
++		log.Println(err)
++	}
++	defer f.Close()
++	if _, err := f.Write(jsonBody); err != nil {
++		log.Println(err)
++	}
++	if _, err := f.WriteString("\n"); err != nil {
++		log.Println(err)
++	}
++
+ 	recordWritesCompleted(float64(len(docs)))
+ 	return nil
+ }
