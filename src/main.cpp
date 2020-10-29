@@ -6,6 +6,8 @@
  * See the file LICENSE for redistribution information.
  */
 
+#include <chrono>
+#include <ctime>
 #include <iostream>
 #include <iomanip>
 #include <locale>
@@ -92,7 +94,14 @@ void process_json_top_level(web::json::value jsn) {
 void load_file(const char *filename) {
     std::string line;
     std::ifstream ifs(filename);
-    while (std::getline(ifs, line)) {
+    auto start = std::chrono::system_clock::now();
+    for (int i = 0; std::getline(ifs, line); i++) {
+        if (i != 0 && i % 10000 == 0) {
+            auto end = std::chrono::system_clock::now();
+            std::chrono::duration<double> elapsed_seconds = end-start;
+            std::cout << "Processed " << i << " lines from file in " << elapsed_seconds.count() << "s" <<std::endl;
+            start = end;
+        }
         process_json_top_level(web::json::value::parse(line));
     }
 }
@@ -128,6 +137,7 @@ int main(int argc, char **argv)
     const char *url = "127.0.0.1:8099";
     const char *query_field = "tiger";
     bool use_file = false;
+    bool use_lsm = false;
     bool run_query = false;
     bool use_server = false;
 
@@ -136,7 +146,7 @@ int main(int argc, char **argv)
 
     // Shut GetOpt error messages down (return '?'):
     opterr = 0;
-    while ( (opt = getopt(argc, argv, "FSf:q:s:")) != -1 ) {
+    while ( (opt = getopt(argc, argv, "FLSf:q:s:")) != -1 ) {
         switch ( opt ) {
             case 'q':
                     run_query = true;
@@ -147,6 +157,9 @@ int main(int argc, char **argv)
                 /* FALLTHROUGH */
             case 'F':
                     use_file = true;
+                break;
+            case 'L':
+                    use_lsm = true;
                 break;
             case 's':
                     url = optarg;
@@ -180,12 +193,16 @@ int main(int argc, char **argv)
     assert(conn);
     assert(session);
 
-    std::string config = "type=lsm,key_format=QS,value_format=Hu";
+    std::string base_config = "";
+    std::string lsm_config = "type=lsm,lsm=(chunk_size=100MB),";
+    if (use_lsm)
+        base_config += lsm_config;
+    std::string config = base_config + "key_format=QS,value_format=Hu";
     if ((ret = wt::create_table(session, rtbl, config)) != 0) {
         std::cout << wt::get_error_message(ret) << '\n';
         return ret;
     }
-    config = "type=lsm,key_format=SQ,value_format=Hu";
+    config = base_config + "key_format=SQ,value_format=Hu";
     if ((ret = wt::create_table(session, ctbl, config)) != 0) {
         std::cout << wt::get_error_message(ret) << '\n';
         return ret;
