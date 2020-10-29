@@ -42,6 +42,11 @@ int query_table(WT_SESSION *session,
                 bool use_col_table,
                 metrics &mtr);
 
+int query_row_table(WT_SESSION *session,
+                    const std::string &uri,
+                    const char *query_field,
+                    metrics &mtr);
+
 int query_col_table(WT_SESSION *session,
                     const std::string &uri,
                     const char *query_field,

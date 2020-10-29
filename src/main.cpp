@@ -109,7 +109,10 @@ void query_table(const char* query_field, bool query_col_table) {
     wt::metrics mtr;
     std::string table = query_col_table ? ctbl : rtbl;
     std::cout << "\nQuerying '" << table << "' for field '" << query_field << "' ...\n";
-    wt::query_table(session, table, query_field, query_col_table, mtr);
+    if (query_col_table)
+        wt::query_table(session, table, query_field, query_col_table, mtr);
+    else
+        wt::query_row_table(session, table, query_field, mtr);
     std::cout << "-------------------------------\n";
     std::cout << " Query time:  " << mtr.query_time << " ms\n";
     std::cout << " Bytes read:  " << commafy(mtr.bytes_read) << '\n';

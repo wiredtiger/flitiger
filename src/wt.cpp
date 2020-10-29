@@ -82,6 +82,46 @@ int query_table(WT_SESSION *session, const std::string &uri, const char *query_f
     return ret;
 }
 
+int query_row_table(WT_SESSION *session, const std::string &uri, const char *query_field,
+  metrics &mtr) {
+
+    int ret = 0;
+    int exact = 0;
+    uint16_t type;
+    uint64_t id;
+    uint64_t read_count = 0;
+    uint64_t match_count = 0;
+    uint64_t bytes_read = 0;
+    double sum = 0;
+    const char *key;
+    WT_ITEM item;
+    WT_CURSOR *cursor = nullptr;
+
+    auto start = std::chrono::steady_clock::now();
+    wt::open_cursor(session, uri.c_str(), &cursor);
+    //cursor->set_key(cursor, 0, query_field);
+    while ((ret = cursor->next(cursor)) == 0) {
+        read_count++;
+        cursor->get_key(cursor, &id, &key);
+        bytes_read += (strlen((const char*) key) + sizeof(id));
+        if (strcmp(key, query_field))
+            continue;
+        cursor->get_value(cursor, &type, &item);
+        bytes_read += (sizeof(type) + item.size);
+        match_count++;
+    }
+    cursor->close(cursor);
+    auto stop = std::chrono::steady_clock::now();
+
+    mtr.query_time = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count();
+    mtr.read_count = read_count;
+    mtr.bytes_read = bytes_read;
+    mtr.match_count = match_count;
+
+    return ret;
+}
+
+
 int get_last_row_insert_id(WT_SESSION *session, const std::string &uri, uint64_t *id) {
 
     int ret = 0;
