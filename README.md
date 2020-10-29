@@ -28,7 +28,7 @@ To use the library, run the generated binary.
 
 If running in server mode, you can send requests using curl in the following form:
 
-`~/work/bson-indexer$ curl http://127.0.0.1:8099/test --data-binary @raw_data/rockbench_1row.json -H 'Content-Type: application/json'`
+`~/work/flitiger$ curl http://127.0.0.1:8099/test --data-binary @raw_data/rockbench_1row.json -H 'Content-Type: application/json'`
 
 ## Using Rockbench to populate FLITiger
 
@@ -39,7 +39,7 @@ Run against a flitiger running in server mode.
 
 Starting up a flitiger in code:
 ```
-$ cd ~/work/bson-indexer/src
+$ cd ~/work/flitiger/src
 $ make
 $ ./flitiger -S
 ```
@@ -104,7 +104,7 @@ Mount the bucket as a filesystem called `s3` inside the data directory:
 
 ```
 $ S3_REGION=ap-southeast-2
-$ s3fs bson-indexer wt_test/s3 -o dbglevel=info -o endpoint=${S3_REGION} -o passwd_file=${HOME}/.passwd-s3fs -o url=https://s3-${S3_REGION}.amazonaws.com/
+$ s3fs flitiger wt_test/s3 -o dbglevel=info -o endpoint=${S3_REGION} -o passwd_file=${HOME}/.passwd-s3fs -o url=https://s3-${S3_REGION}.amazonaws.com/
 ```
 
 Run the workload as before: once enough data is inserted, merges will be triggered that create level 2 chunks (after around 60 chunks in each LSM tree).
