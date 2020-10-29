@@ -7,6 +7,8 @@
  */
 
 #include <iostream>
+#include <iomanip>
+#include <locale>
 #include <string>
 #include <fstream>
 #include <cassert>
@@ -14,7 +16,6 @@
 
 #include "wiredtiger.h"
 #include "RestIngestServer.hpp"
-
 #include "wt.h"
 
 std::string rtbl = "table:row_table";
@@ -64,7 +65,7 @@ void process_json(web::json::object bjct, std::string full_key, WT_CURSOR* rc, W
             if (!new_key.empty()) {
                 new_key.append("." + key);
                 insert_row(rc, db_document_id, new_key, val);
-                insert_column(cc, key, db_document_id, val);
+                insert_column(cc, new_key, db_document_id, val);
             } else {
                 insert_row(rc, db_document_id, key, val);
                 insert_column(cc, key, db_document_id, val);
@@ -96,17 +97,25 @@ void load_file(const char *filename) {
     }
 }
 
+template<class T>
+std::string commafy(T value) {
+    std::stringstream ss;
+    ss.imbue(std::locale(""));
+    ss << std::fixed << value;
+    return ss.str();
+}
+
 void query_table(const char* query_field, bool query_col_table) {
     wt::metrics mtr;
     std::string table = query_col_table ? ctbl : rtbl;
-    std::cout << "\nQuerying " << 10*db_document_id << " records from table '"
-              << table << "' for field '" << query_field << "' ...\n";
+    std::cout << "\nQuerying '" << table << "' for field '" << query_field << "' ...\n";
     wt::query_table(session, table, query_field, query_col_table, mtr);
-    std::cout << "elapsed time:  " << mtr.query_time << " ms\n";
-    std::cout << "records read:  " << mtr.read_count << '\n';
-    if (mtr.average > 0) {
-        std::cout << "average value: " << mtr.average << '\n';
-    }
+    std::cout << "-------------------------------\n";
+    std::cout << " Query time:  " << mtr.query_time << " ms\n";
+    std::cout << " Bytes read:  " << commafy(mtr.bytes_read) << '\n';
+    std::cout << " Read count:  " << commafy(mtr.read_count) << '\n';
+    std::cout << " Match count: " << commafy(mtr.match_count) << '\n';
+    std::cout << "-------------------------------\n";
 }
 
 int main(int argc, char **argv)
@@ -114,7 +123,7 @@ int main(int argc, char **argv)
     int opt;
     const char *filename = "../raw_data/rockbench_10rows.json";
     const char *url = "127.0.0.1:8099";
-    const char *query_field;
+    const char *query_field = "tiger";
     bool use_file = false;
     bool run_query = false;
     bool use_server = false;

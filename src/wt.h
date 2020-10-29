@@ -13,9 +13,10 @@
 namespace wt {
 
 struct metrics {
-    double average = 0;
-    uint64_t read_count = 0;
+    uint64_t bytes_read = 0;
     uint64_t query_time = 0;
+    uint64_t read_count = 0;
+    uint64_t match_count = 0;
 };
 
 static const std::string get_error_message(int return_code) {

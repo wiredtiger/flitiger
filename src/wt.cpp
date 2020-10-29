@@ -36,6 +36,7 @@ int query_table(WT_SESSION *session, const std::string &uri, const char *query_f
     uint64_t id;
     uint64_t read_count = 0;
     uint64_t match_count = 0;
+    uint64_t bytes_read = 0;
     double sum = 0;
     const char *key;
     WT_ITEM item;
@@ -46,21 +47,27 @@ int query_table(WT_SESSION *session, const std::string &uri, const char *query_f
     use_col_table ? cursor->set_key(cursor, query_field, 0) :
                     cursor->set_key(cursor, 0, query_field);
     if ((ret = cursor->search_near(cursor, &exact)) == 0) {
-        if (exact == 0) match_count++;
+        if (exact == 0) {
+            match_count++;
+            cursor->get_value(cursor, &type, &item);
+            bytes_read += (sizeof(type) + item.size);
+        }
         read_count++;
         while ((ret = cursor->next(cursor)) == 0) {
             read_count++;
             if (use_col_table) {
                 cursor->get_key(cursor, &key, &id);
+                bytes_read += (strlen((const char*) key) + sizeof(id));
                 if (strcmp(key, query_field))
                     break;
             } else {
                 cursor->get_key(cursor, &id, &key);
+                bytes_read += (strlen((const char*) key) + sizeof(id));
                 if (strcmp(key, query_field))
                     continue;
             }
             cursor->get_value(cursor, &type, &item);
-            if (type == Number) sum += std::stod((const char*) item.data);
+            bytes_read += (sizeof(type) + item.size);
             match_count++;
         }
     }
@@ -69,8 +76,8 @@ int query_table(WT_SESSION *session, const std::string &uri, const char *query_f
 
     mtr.query_time = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count();
     mtr.read_count = read_count;
-    if (match_count)
-        mtr.average = sum/(double) match_count;
+    mtr.bytes_read = bytes_read;
+    mtr.match_count = match_count;
 
     return ret;
 }
