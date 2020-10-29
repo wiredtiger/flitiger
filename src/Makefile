@@ -15,7 +15,7 @@ CPPFLAGS = $(INCPATH) -Wall -std=c++17 -Wno-unused
 
 #-- executables ----------------------------------------------------------------
 
-TARGET = wiredindex
+TARGET = flitiger
 
 
 #-- link libraries -------------------------------------------------------------

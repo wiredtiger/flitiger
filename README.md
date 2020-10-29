@@ -1,4 +1,4 @@
-# bson-indexer
+# FLITiger
 A usage of the WiredTiger library that splits BSON documents and stores them fully indexed.
 
 A link to the (internal to MongoDB) document accompanying this repo:
@@ -30,7 +30,7 @@ If running in server mode, you can send requests using curl in the following for
 
 `~/work/bson-indexer$ curl http://127.0.0.1:8099/test --data-binary @raw_data/rockbench_1row.json -H 'Content-Type: application/json'`
 
-## Using Rockbench to populate FliTiger
+## Using Rockbench to populate FLITiger
 
 Clone the Rockbench repository.
 Apply the diff at <root>/raw_data/rbench.diff to the repository.
@@ -41,7 +41,7 @@ Starting up a flitiger in code:
 ```
 $ cd ~/work/bson-indexer/src
 $ make
-$ ./wiredindex -S
+$ ./flitiger -S
 ```
 
 Starting up a generator in code:
@@ -103,7 +103,7 @@ $ chmod 600 ${HOME}/.passwd-s3fs
 Mount the bucket as a filesystem called `s3` inside the data directory:
 
 ```
-$ S3_REGION=ap-southeast-2 
+$ S3_REGION=ap-southeast-2
 $ s3fs bson-indexer wt_test/s3 -o dbglevel=info -o endpoint=${S3_REGION} -o passwd_file=${HOME}/.passwd-s3fs -o url=https://s3-${S3_REGION}.amazonaws.com/
 ```
 
