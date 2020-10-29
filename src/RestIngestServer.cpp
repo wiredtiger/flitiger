@@ -38,18 +38,17 @@ CommandHandler::CommandHandler(utility::string_t url, void (*json_callback)(web:
 
 void CommandHandler::handle_get_or_post(http_request message)
 {
-    ucout << "Method: " << message.method() << std::endl;
-    ucout << "URI: " << http::uri::decode(message.relative_uri().path()) << std::endl;
-    ucout << "Query: " << http::uri::decode(message.relative_uri().query()) << std::endl << std::endl;
+    //ucout << "Method: " << message.method() << std::endl;
+    //ucout << "URI: " << http::uri::decode(message.relative_uri().path()) << std::endl;
+    //ucout << "Query: " << http::uri::decode(message.relative_uri().query()) << std::endl << std::endl;
     json::value payload;
     message.extract_json().then([&payload](pplx::task<json::value> task)
 	{
 		payload = task.get();
 	})
 		.wait();
-    ucout << payload.serialize() << std::endl;
+    //ucout << payload.serialize() << std::endl;
     _json_callback(payload);
-    /* TODO: Send this information into process_json */
     message.reply(status_codes::OK, "ACCEPTED");
 }
 

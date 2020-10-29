@@ -142,7 +142,7 @@ int open_cursor(WT_SESSION *session, const std::string &uri, WT_CURSOR **cursorp
     WT_CURSOR *cursor = nullptr;
     int ret = session->open_cursor(session, uri.c_str(), nullptr, nullptr, &cursor);
     *cursorp = cursor;
-    return ret;    
+    return ret;
 }
 
 int open_database(const std::string& path, WT_CONNECTION **connp, WT_SESSION **sessionp) {
@@ -163,6 +163,13 @@ int open_database(const std::string& path, WT_CONNECTION **connp, WT_SESSION **s
     *connp = conn;
     *sessionp = session;
     return ret;
+}
+
+void open_session(WT_CONNECTION *conn, WT_SESSION **sessionp) {
+    WT_SESSION *session = nullptr;
+    conn->open_session(conn, NULL, NULL, &session);
+    assert(session);
+    *sessionp = session;
 }
 
 int row_table_insert(WT_CURSOR *cursor, uint64_t document_id, const std::string &key,

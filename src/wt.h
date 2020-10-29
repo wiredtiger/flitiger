@@ -60,6 +60,9 @@ int open_database(const std::string &path,
                   WT_CONNECTION **connp,
                   WT_SESSION **sessionp);
 
+void open_session(WT_CONNECTION *conn,
+                 WT_SESSION **sessionp);
+
 int create_table(WT_SESSION *session,
                  const std::string &uri,
                  const std::string &config);
