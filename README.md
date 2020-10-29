@@ -51,6 +51,7 @@ $ git clone git@github.com:rockset/rockbench.git
 $ cd rockbench
 $ patch -p1 < ../bson-index/raw_data/rbench.diff
 $ cd generator
+$ go get ./...
 $ go build
 $ FLITIGER_URL="http://127.0.0.1:8099/" BATCH_SIZE=2 WPS=10 DESTINATION=flitiger ./generator
 ```
