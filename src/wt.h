@@ -36,18 +36,12 @@ static int close_cursor(WT_CURSOR *cursor) {
     return cursor->close(cursor);
 }
 
-int query_table(WT_SESSION *session,
-                const std::string &uri,
-                const char *query_field,
-                bool use_col_table,
-                metrics &mtr);
-
-int query_row_table(WT_SESSION *session,
+int query_col_table(WT_SESSION *session,
                     const std::string &uri,
                     const char *query_field,
                     metrics &mtr);
 
-int query_col_table(WT_SESSION *session,
+int query_row_table(WT_SESSION *session,
                     const std::string &uri,
                     const char *query_field,
                     metrics &mtr);

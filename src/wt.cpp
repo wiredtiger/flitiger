@@ -27,57 +27,45 @@ extern "C" {
 namespace wt {
 enum value_type { Number, Boolean, String, Object, Array, Null };
 
-int query_table(WT_SESSION *session, const std::string &uri, const char *query_field,
-  bool use_col_table, metrics &mtr) {
+int query_col_table(
+  WT_SESSION *session, const std::string &uri, const char *query_field, metrics &mtr) {
 
     int ret = 0;
     int exact = 0;
     uint16_t type;
     uint64_t id;
-    uint64_t read_count = 0;
-    uint64_t match_count = 0;
-    uint64_t bytes_read = 0;
-    double sum = 0;
     const char *key;
     WT_ITEM item;
     WT_CURSOR *cursor = nullptr;
 
+    mtr.read_count = 0;
+    mtr.bytes_read = 0;
+    mtr.match_count = 0;
+
     auto start = std::chrono::steady_clock::now();
     wt::open_cursor(session, uri.c_str(), &cursor);
-    use_col_table ? cursor->set_key(cursor, query_field, 0) :
-                    cursor->set_key(cursor, 0, query_field);
+    cursor->set_key(cursor, query_field, 0);
     if ((ret = cursor->search_near(cursor, &exact)) == 0) {
         if (exact == 0) {
-            match_count++;
+            mtr.match_count++;
             cursor->get_value(cursor, &type, &item);
-            bytes_read += (sizeof(type) + item.size);
+            mtr.bytes_read += (sizeof(type) + item.size);
         }
-        read_count++;
+        mtr.read_count++;
         while ((ret = cursor->next(cursor)) == 0) {
-            read_count++;
-            if (use_col_table) {
-                cursor->get_key(cursor, &key, &id);
-                bytes_read += (strlen((const char*) key) + sizeof(id));
-                if (strcmp(key, query_field))
-                    break;
-            } else {
-                cursor->get_key(cursor, &id, &key);
-                bytes_read += (strlen((const char*) key) + sizeof(id));
-                if (strcmp(key, query_field))
-                    continue;
-            }
+            mtr.read_count++;
+            cursor->get_key(cursor, &key, &id);
+            mtr.bytes_read += (strlen((const char*) key) + sizeof(id));
+            if (strcmp(key, query_field))
+                break;
             cursor->get_value(cursor, &type, &item);
-            bytes_read += (sizeof(type) + item.size);
-            match_count++;
+            mtr.bytes_read += (sizeof(type) + item.size);
+            mtr.match_count++;
         }
     }
     cursor->close(cursor);
     auto stop = std::chrono::steady_clock::now();
-
     mtr.query_time = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count();
-    mtr.read_count = read_count;
-    mtr.bytes_read = bytes_read;
-    mtr.match_count = match_count;
 
     return ret;
 }
@@ -86,37 +74,31 @@ int query_row_table(WT_SESSION *session, const std::string &uri, const char *que
   metrics &mtr) {
 
     int ret = 0;
-    int exact = 0;
     uint16_t type;
     uint64_t id;
-    uint64_t read_count = 0;
-    uint64_t match_count = 0;
-    uint64_t bytes_read = 0;
-    double sum = 0;
     const char *key;
     WT_ITEM item;
     WT_CURSOR *cursor = nullptr;
 
+    mtr.read_count = 0;
+    mtr.match_count = 0;
+    mtr.bytes_read = 0;
+
     auto start = std::chrono::steady_clock::now();
     wt::open_cursor(session, uri.c_str(), &cursor);
-    //cursor->set_key(cursor, 0, query_field);
     while ((ret = cursor->next(cursor)) == 0) {
-        read_count++;
+        mtr.read_count++;
         cursor->get_key(cursor, &id, &key);
-        bytes_read += (strlen((const char*) key) + sizeof(id));
+        mtr.bytes_read += (strlen((const char*) key) + sizeof(id));
         if (strcmp(key, query_field))
             continue;
         cursor->get_value(cursor, &type, &item);
-        bytes_read += (sizeof(type) + item.size);
-        match_count++;
+        mtr.bytes_read += (sizeof(type) + item.size);
+        mtr.match_count++;
     }
     cursor->close(cursor);
     auto stop = std::chrono::steady_clock::now();
-
     mtr.query_time = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count();
-    mtr.read_count = read_count;
-    mtr.bytes_read = bytes_read;
-    mtr.match_count = match_count;
 
     return ret;
 }
