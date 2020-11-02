@@ -1,8 +1,25 @@
 # FLITiger
-A usage of the WiredTiger library that splits BSON documents and stores them fully indexed.
+An application built using the WiredTiger library that splits BSON documents and stores them in two different index-like structures:
+* One column-like index, which stores fieldName|document ID : value
+* One row-like, which stores document ID|fieldName : value
+* It does not store a full version of the original document.
 
-A link to the (internal to MongoDB) document accompanying this repo:
-https://docs.google.com/document/d/1Exe9mpautvl-dwiIQZu6l7HPkFG7i1nG0a_-Cci8SDY/edit#heading=h.rvldxpy3jdvd
+A picture describing the data representation:
+
+![Data Representation](https://github.com/wiredtiger/flitiger/blob/main/doc/images/FLITigerDataRep.png)
+
+# Architecture
+
+![Architecture diagram](https://github.com/wiredtiger/flitiger/blob/main/doc/images/FLITigerArchitecture.png)
+
+## References
+A [link to](https://docs.google.com/document/d/1Exe9mpautvl-dwiIQZu6l7HPkFG7i1nG0a_-Cci8SDY/edit#heading=h.rvldxpy3jdvd) the (internal to MongoDB) document accompanying this repository.
+
+
+A [link to](https://docs.google.com/presentation/d/1-AnMxPgsuym-TBF7I8LwTYeFEBs1abWQqXRe9hMyWj4/edit#slide=id.ga55672cef3_1_318
+) the slideshow from Skunkworks:
+
+A [link to](https://youtu.be/zI42B1hq1mU) the Skunkworks presentation recording:
 
 # Installation
 
